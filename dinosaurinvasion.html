@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM INTEGRITY COMPROMISED</title>
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> <!-- Optional: Retro pixel font -->
+    <title>!!! SYSTEM ALERT !!!</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         /* CSS styles embedded */
+        :root {
+            --main-bg: #050505;
+            --text-color: #00ff41;
+            --border-color: #008f11;
+            --glow-color: rgba(0, 255, 65, 0.4);
+            --scanline-color: rgba(0, 255, 65, 0.15);
+            --cursor-color: #33ff77;
+            --warning-color: #ff0000; /* Red for warning */
+            --warning-glow: rgba(255, 0, 0, 0.6);
+        }
+
         body {
-            background-color: #050505; /* Very dark */
-            color: #00ff41; /* Bright green */
+            background-color: var(--main-bg);
+            color: var(--text-color);
             font-family: 'VT323', 'Courier New', Courier, monospace;
             margin: 0;
             padding: 0;
@@ -18,93 +29,147 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
-            font-size: 1.1em; /* Adjusted font size */
-            text-shadow: 0 0 4px rgba(0, 255, 65, 0.4); /* Slightly stronger glow */
-            cursor: none; /* Hide the mouse cursor */
+            font-size: 1.1em;
+            text-shadow: 0 0 4px var(--glow-color);
+            cursor: none;
         }
 
         .terminal-container {
             width: 95%;
             max-width: 850px;
+            height: 90vh; /* Fixed height */
+            max-height: 600px;
             padding: 15px 25px;
-            border: 1px solid #008f11; /* Darker green border */
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.25);
-            background-color: rgba(0, 10, 0, 0.85); /* Dark green tinted black */
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 20px var(--glow-color);
+            background-color: rgba(0, 10, 0, 0.85);
             position: relative;
+            display: flex;
+            flex-direction: column; /* Stack initial warning and output */
         }
 
-        #output {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            height: 450px; /* Adjust height as needed */
-            overflow-y: auto; /* Allow scrolling */
-            overflow-x: hidden; /* Prevent horizontal scroll */
-            padding-right: 10px; /* Space for scrollbar */
-        }
-
-        /* Blinking cursor effect */
-        .cursor::after {
-            content: '█'; /* Solid block cursor */
+        /* Initial Warning Section */
+        #initial-warning {
+            flex-grow: 1; /* Take up available space */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
             opacity: 1;
-            animation: blink 0.9s step-end infinite;
-            margin-left: 3px;
-            color: #33ff77; /* Slightly lighter cursor */
+            transition: opacity 0.5s ease-out; /* Fade out effect */
         }
 
-        @keyframes blink {
-            50% {
-                opacity: 0;
-            }
-        }
-
-        .typed-line {
-            margin-bottom: 2px; /* Small space between lines */
-        }
-
-        /* Scanlines Overlay */
-        .scanlines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0) 0%,
-                rgba(0, 0, 0, 0) 97%,
-                rgba(0, 255, 65, 0.15) 98%,
-                rgba(0, 0, 0, 0.8) 100%
-            );
-            background-size: 100% 4px; /* Thicker scanlines */
+        #initial-warning.hidden {
+            opacity: 0;
+            position: absolute; /* Take out of flow when hidden */
             pointer-events: none;
-            z-index: 2;
-            animation: scan 12s linear infinite alternate; /* Move back and forth */
         }
 
-        @keyframes scan {
-            0% { background-position: 0 0; }
-            100% { background-position: 0 80px; }
+        #skull {
+            font-size: clamp(0.5rem, 6vw, 2rem); /* Responsive skull size */
+            line-height: 0.8; /* Tighten lines for skull */
+            color: var(--text-color);
+            text-shadow: 0 0 6px var(--glow-color);
+            white-space: pre; /* Preserve ASCII whitespace */
+            margin-bottom: 15px;
         }
 
-         /* Simple scrollbar styling */
+        #warning-message {
+            font-size: clamp(1rem, 6vw, 2.5rem); /* Responsive warning size */
+            color: var(--warning-color);
+            text-shadow: 0 0 8px var(--warning-glow);
+            font-weight: bold;
+            animation: pulse 1.5s infinite alternate; /* Pulsing effect */
+        }
+
+        @keyframes pulse {
+            from { text-shadow: 0 0 6px var(--warning-glow); }
+            to { text-shadow: 0 0 14px var(--warning-glow), 0 0 10px var(--warning-color); }
+        }
+
+        /* Main Text Output Area */
+        #output {
+            height: 100%; /* Take full height after warning fades */
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 10px;
+            display: none; /* Start hidden */
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+         #output.visible {
+            display: block;
+            opacity: 1;
+         }
+
+        .cursor::after {
+            content: '█';
+            opacity: 1;
+            animation: blink 0.8s step-end infinite; /* Faster blink */
+            margin-left: 3px;
+            color: var(--cursor-color);
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .typed-line { margin-bottom: 1px; } /* Tighter lines */
+
+        /* Scanlines */
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient( to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 97%, var(--scanline-color) 98%, rgba(0,0,0,0.8) 100% );
+            background-size: 100% 3px; /* Slightly thinner */
+            pointer-events: none; z-index: 2;
+            animation: scan 10s linear infinite alternate;
+        }
+        @keyframes scan { 0% { background-position: 0 0; } 100% { background-position: 0 70px; } }
+
+        /* Scrollbar */
         #output::-webkit-scrollbar { width: 8px; }
-        #output::-webkit-scrollbar-track { background: #050505; }
-        #output::-webkit-scrollbar-thumb { background: #008f11; border: 1px solid #050505; }
-        #output::-webkit-scrollbar-thumb:hover { background: #00ff41; }
+        #output::-webkit-scrollbar-track { background: var(--main-bg); }
+        #output::-webkit-scrollbar-thumb { background: var(--border-color); border: 1px solid var(--main-bg); }
+        #output::-webkit-scrollbar-thumb:hover { background: var(--text-color); }
 
     </style>
 </head>
 <body>
     <div class="terminal-container">
+        <!-- Initial Skull and Warning -->
+        <div id="initial-warning">
+            <pre id="skull">
+      ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒██▒▒▒▒▒▒▒██▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒██▒▒▒▒▒▒▒██▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██▒▒▒▒▒▒▒
+▒▒▒▒▒▒████▒▒▒▒▒▒▒▒▒▒▒████▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒█████████████████▒▒▒▒▒▒▒▒
+▒▒▒▒▒▒▒▒▒█████████████▒▒▒▒▒▒▒▒▒▒
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+  ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+      ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+            </pre>
+            <div id="warning-message">SYSTEM COMPROMISED</div>
+        </div>
+
+        <!-- Main Typed Output -->
         <div id="output" class="cursor"></div>
+
         <div class="scanlines"></div>
     </div>
 
     <script>
         // JavaScript embedded
+        const initialWarningElement = document.getElementById('initial-warning');
         const outputElement = document.getElementById('output');
 
-        // Text sequences
+        // Text sequences (same as before)
         const bootSequence = [
             "Initializing kernel modules...",
             "Mounting virtual file systems...",
@@ -116,9 +181,7 @@
             "ACCESS GRANTED.",
             "Loading payload..."
         ];
-
         const introText = "Shakespearian Dinasaurs invaded your laptop…";
-
         const monologueLines = [
             "Howl, howl, howl, howl! O, you are men of stones:",
             "Had I your tongues and eyes, I'ld use them so",
@@ -129,33 +192,29 @@
             "Why, then she lives."
         ];
 
-        // Timing configuration
-        const charTypingDelay = 60; // Faster typing for boot sequence
-        const bootLineDelay = 300; // Pause between boot messages
-        const suspenseDelay = 1500; // Pause before invasion message
-        const introTypingDelay = 90; // Slower typing for dramatic text
-        const monologueLineDelay = 700; // Pause between monologue lines
+        // --- FASTER Timing configuration ---
+        const initialWarningDuration = 3000; // How long to show skull/warning (ms)
+        const fadeDuration = 500;          // Duration of fade effect (ms) - sync with CSS transition
+        const charTypingDelay = 35;       // Faster typing
+        const bootLineDelay = 150;        // Faster boot lines
+        const suspenseDelay = 600;        // Reduced suspense
+        const introTypingDelay = 55;      // Faster intro/monologue typing
+        const monologueLineDelay = 250;   // Faster monologue lines
 
-        // --- Helper Functions ---
+        // --- Helper Functions (mostly same) ---
+        function scrollToBottom() { outputElement.scrollTop = outputElement.scrollHeight; }
+        function addLineBreak() { outputElement.innerHTML += '\n'; scrollToBottom(); }
 
-        // Function to scroll output to bottom
-        function scrollToBottom() {
-            outputElement.scrollTop = outputElement.scrollHeight;
-        }
-
-        // Function to add a line break
-        function addLineBreak() {
-            outputElement.innerHTML += '\n';
-            scrollToBottom();
-        }
-
-        // Function to simulate typing a single line
         function typeLine(text, charDelay, callback) {
             let index = 0;
-            const lineElement = document.createElement('div'); // Use div for each line
+            const lineElement = document.createElement('div');
             lineElement.className = 'typed-line';
+            // Ensure output is visible before adding lines
+            if (!outputElement.classList.contains('visible')) {
+                 outputElement.classList.add('visible');
+            }
             outputElement.appendChild(lineElement);
-            outputElement.classList.remove('cursor'); // Remove cursor from main div
+            outputElement.classList.remove('cursor');
 
             function typeChar() {
                 if (index < text.length) {
@@ -164,52 +223,58 @@
                     index++;
                     setTimeout(typeChar, charDelay);
                 } else {
-                    // Finished typing line, re-add cursor to main div for next step
                     outputElement.classList.add('cursor');
-                    if (callback) callback(); // Proceed to next action
+                    if (callback) callback();
                 }
             }
-            typeChar(); // Start typing this line
+            typeChar();
         }
 
-        // Function to process an array of lines sequentially
         function typeSequence(lines, charDelay, lineDelay, finalCallback) {
             let lineIndex = 0;
-
             function nextLine() {
                 if (lineIndex < lines.length) {
                     typeLine(lines[lineIndex], charDelay, () => {
                         lineIndex++;
-                        setTimeout(nextLine, lineDelay); // Wait before typing next line
+                        setTimeout(nextLine, lineDelay);
                     });
                 } else {
-                    if (finalCallback) finalCallback(); // Sequence finished
+                    if (finalCallback) finalCallback();
                 }
             }
-            nextLine(); // Start the sequence
+            nextLine();
         }
 
-        // --- Execution Sequence ---
+        // --- NEW Execution Sequence ---
+        // 1. Show initial warning for a duration
+        setTimeout(() => {
+            // 2. Hide initial warning (fade out)
+            initialWarningElement.classList.add('hidden');
 
-        // Start the boot sequence
-        typeSequence(bootSequence, charTypingDelay, bootLineDelay, () => {
-            // After boot sequence, wait, then type invasion message
+            // 3. After fade out, show output area and start typing sequence
             setTimeout(() => {
-                addLineBreak(); // Add a space
-                typeLine(introText, introTypingDelay, () => {
-                     // After invasion message, wait, then type monologue
-                     setTimeout(() => {
-                         addLineBreak(); // Add a space
-                         // Use typeSequence again for monologue with different delays
-                         typeSequence(monologueLines, introTypingDelay, monologueLineDelay, () => {
-                            // Optional: Final message after monologue
-                            addLineBreak();
-                            typeLine("> Session Terminated.", charTypingDelay, null);
-                         });
-                     }, suspenseDelay); // Wait before monologue
-                });
-            }, suspenseDelay); // Wait before invasion message
-        });
+                 outputElement.classList.add('visible'); // Fade in output area
+                 // Start the boot sequence typing
+                 typeSequence(bootSequence, charTypingDelay, bootLineDelay, () => {
+                    // After boot sequence, wait, then type invasion message
+                    setTimeout(() => {
+                        addLineBreak();
+                        typeLine(introText, introTypingDelay, () => {
+                             // After invasion message, wait, then type monologue
+                             setTimeout(() => {
+                                 addLineBreak();
+                                 typeSequence(monologueLines, introTypingDelay, monologueLineDelay, () => {
+                                    // Optional: Final message
+                                    addLineBreak();
+                                    typeLine("> Session Terminated.", charTypingDelay, null);
+                                 });
+                             }, suspenseDelay); // Wait before monologue
+                        });
+                    }, suspenseDelay); // Wait before invasion message
+                 });
+            }, fadeDuration); // Wait for warning fade-out before showing/starting typing
+
+        }, initialWarningDuration); // Initial display time for skull/warning
 
     </script>
 </body>
