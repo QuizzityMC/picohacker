@@ -16,6 +16,8 @@
             --cursor-color: #33ff77;
             --warning-color: #ff0000; /* Red for warning */
             --warning-glow: rgba(255, 0, 0, 0.6);
+            --final-message-color: #ff1111; /* Bright Red for final message */
+            --final-message-glow: rgba(255, 30, 30, 0.7);
         }
 
         body {
@@ -34,23 +36,35 @@
             cursor: none;
         }
 
-        .terminal-container {
+        /* Main container for layout */
+        .container {
+            position: relative; /* Needed for overlay positioning */
             width: 95%;
             max-width: 850px;
-            height: 90vh; /* Fixed height */
+            height: 90vh;
             max-height: 600px;
+        }
+
+        .terminal-container {
+            width: 100%;
+            height: 100%;
             padding: 15px 25px;
             border: 1px solid var(--border-color);
             box-shadow: 0 0 20px var(--glow-color);
             background-color: rgba(0, 10, 0, 0.85);
             position: relative;
             display: flex;
-            flex-direction: column; /* Stack initial warning and output */
+            flex-direction: column;
+            transition: opacity 0.5s ease-out; /* Fade out terminal */
+        }
+        .terminal-container.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* Initial Warning Section */
         #initial-warning {
-            flex-grow: 1; /* Take up available space */
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -58,32 +72,28 @@
             text-align: center;
             padding: 10px;
             opacity: 1;
-            transition: opacity 0.5s ease-out; /* Fade out effect */
+            transition: opacity 0.5s ease-out;
         }
-
         #initial-warning.hidden {
             opacity: 0;
-            position: absolute; /* Take out of flow when hidden */
+            position: absolute;
             pointer-events: none;
         }
-
         #skull {
-            font-size: clamp(0.5rem, 6vw, 2rem); /* Responsive skull size */
-            line-height: 0.8; /* Tighten lines for skull */
+            font-size: clamp(0.5rem, 6vw, 2rem);
+            line-height: 0.8;
             color: var(--text-color);
             text-shadow: 0 0 6px var(--glow-color);
-            white-space: pre; /* Preserve ASCII whitespace */
+            white-space: pre;
             margin-bottom: 15px;
         }
-
         #warning-message {
-            font-size: clamp(1rem, 6vw, 2.5rem); /* Responsive warning size */
+            font-size: clamp(1rem, 6vw, 2.5rem);
             color: var(--warning-color);
             text-shadow: 0 0 8px var(--warning-glow);
             font-weight: bold;
-            animation: pulse 1.5s infinite alternate; /* Pulsing effect */
+            animation: pulse 1.5s infinite alternate;
         }
-
         @keyframes pulse {
             from { text-shadow: 0 0 6px var(--warning-glow); }
             to { text-shadow: 0 0 14px var(--warning-glow), 0 0 10px var(--warning-color); }
@@ -91,36 +101,55 @@
 
         /* Main Text Output Area */
         #output {
-            height: 100%; /* Take full height after warning fades */
+            height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             padding-right: 10px;
-            display: none; /* Start hidden */
+            display: none;
             opacity: 0;
             transition: opacity 0.5s ease-in;
         }
-         #output.visible {
-            display: block;
-            opacity: 1;
-         }
+         #output.visible { display: block; opacity: 1; }
+        .cursor::after { content: '█'; opacity: 1; animation: blink 0.8s step-end infinite; margin-left: 3px; color: var(--cursor-color); }
+        @keyframes blink { 50% { opacity: 0; } }
+        .typed-line { margin-bottom: 1px; }
 
-        .cursor::after {
-            content: '█';
+        /* Final Message Overlay */
+        #final-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(5, 0, 0, 0.95); /* Dark red tinted background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: clamp(1.5rem, 10vw, 5rem); /* Large responsive font */
+            color: var(--final-message-color);
+            text-shadow: 0 0 10px var(--final-message-glow), 0 0 15px red;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 10; /* Above terminal */
+            opacity: 0; /* Start hidden */
+            pointer-events: none; /* Start non-interactive */
+            transition: opacity 0.7s ease-in;
+            font-weight: bold;
+            white-space: normal; /* Allow wrapping */
+            line-height: 1.2;
+        }
+        #final-message.visible {
             opacity: 1;
-            animation: blink 0.8s step-end infinite; /* Faster blink */
-            margin-left: 3px;
-            color: var(--cursor-color);
+            pointer-events: auto;
         }
 
-        @keyframes blink { 50% { opacity: 0; } }
-
-        .typed-line { margin-bottom: 1px; } /* Tighter lines */
 
         /* Scanlines */
         .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient( to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 97%, var(--scanline-color) 98%, rgba(0,0,0,0.8) 100% );
-            background-size: 100% 3px; /* Slightly thinner */
+            background-size: 100% 3px;
             pointer-events: none; z-index: 2;
             animation: scan 10s linear infinite alternate;
         }
@@ -135,10 +164,11 @@
     </style>
 </head>
 <body>
-    <div class="terminal-container">
-        <!-- Initial Skull and Warning -->
-        <div id="initial-warning">
-            <pre id="skull">
+    <div class="container">
+        <div class="terminal-container">
+            <!-- Initial Skull and Warning -->
+            <div id="initial-warning">
+                <pre id="skull">
       ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
     ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
@@ -154,52 +184,58 @@
   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
     ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
       ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-            </pre>
-            <div id="warning-message">SYSTEM COMPROMISED</div>
+                </pre>
+                <div id="warning-message">SYSTEM COMPROMISED</div>
+            </div>
+
+            <!-- Main Typed Output -->
+            <div id="output" class="cursor"></div>
+
+            <div class="scanlines"></div>
         </div>
 
-        <!-- Main Typed Output -->
-        <div id="output" class="cursor"></div>
-
-        <div class="scanlines"></div>
+        <!-- Final Message Overlay -->
+        <div id="final-message">
+            Thanks for your data
+        </div>
     </div>
 
     <script>
         // JavaScript embedded
         const initialWarningElement = document.getElementById('initial-warning');
         const outputElement = document.getElementById('output');
+        const terminalContainerElement = document.querySelector('.terminal-container');
+        const finalMessageElement = document.getElementById('final-message');
 
-        // Text sequences (same as before)
-        const bootSequence = [
-            "Initializing kernel modules...",
-            "Mounting virtual file systems...",
+        // Text sequences
+        const bootSequence = [ /* ... same as before ... */
+            "Initializing kernel modules...", "Mounting virtual file systems...",
             "Checking system integrity... WARNING: Checksum mismatch detected.",
-            "Attempting recovery sequence...",
-            "Elevating privileges... OK.",
+            "Attempting recovery sequence...", "Elevating privileges... OK.",
             "Bypassing security protocols... [#######.....]",
-            "Establishing remote connection...",
-            "ACCESS GRANTED.",
-            "Loading payload..."
-        ];
+            "Establishing remote connection...", "ACCESS GRANTED.",
+            "Loading payload..." ];
         const introText = "Shakespearian Dinasaurs invaded your laptop…";
-        const monologueLines = [
+        const monologueLines = [ /* ... same as before ... */
             "Howl, howl, howl, howl! O, you are men of stones:",
             "Had I your tongues and eyes, I'ld use them so",
             "That heaven's vault should crack. She's gone for ever!",
             "I know when one is dead, and when one lives;",
             "She's dead as earth. Lend me a looking-glass;",
             "If that her breath will mist or stain the stone,",
-            "Why, then she lives."
-        ];
+            "Why, then she lives." ];
 
         // --- FASTER Timing configuration ---
-        const initialWarningDuration = 3000; // How long to show skull/warning (ms)
-        const fadeDuration = 500;          // Duration of fade effect (ms) - sync with CSS transition
-        const charTypingDelay = 35;       // Faster typing
-        const bootLineDelay = 150;        // Faster boot lines
-        const suspenseDelay = 600;        // Reduced suspense
-        const introTypingDelay = 55;      // Faster intro/monologue typing
-        const monologueLineDelay = 250;   // Faster monologue lines
+        const initialWarningDuration = 3000;
+        const fadeDuration = 500;
+        const charTypingDelay = 35;
+        const bootLineDelay = 150;
+        const suspenseDelay = 600;
+        const introTypingDelay = 55;
+        const monologueLineDelay = 250;
+        const finalMessageDelay = 1000; // Pause after session terminated
+        const showFinalMessageDuration = 4000; // How long to show "Thanks" message
+        const closeTabDelay = 500; // Short delay before attempting close
 
         // --- Helper Functions (mostly same) ---
         function scrollToBottom() { outputElement.scrollTop = outputElement.scrollHeight; }
@@ -209,72 +245,71 @@
             let index = 0;
             const lineElement = document.createElement('div');
             lineElement.className = 'typed-line';
-            // Ensure output is visible before adding lines
-            if (!outputElement.classList.contains('visible')) {
-                 outputElement.classList.add('visible');
-            }
+            if (!outputElement.classList.contains('visible')) { outputElement.classList.add('visible'); }
             outputElement.appendChild(lineElement);
             outputElement.classList.remove('cursor');
 
             function typeChar() {
                 if (index < text.length) {
                     lineElement.innerHTML += text.charAt(index);
-                    scrollToBottom();
-                    index++;
+                    scrollToBottom(); index++;
                     setTimeout(typeChar, charDelay);
                 } else {
                     outputElement.classList.add('cursor');
                     if (callback) callback();
                 }
-            }
-            typeChar();
+            } typeChar();
         }
 
         function typeSequence(lines, charDelay, lineDelay, finalCallback) {
             let lineIndex = 0;
             function nextLine() {
                 if (lineIndex < lines.length) {
-                    typeLine(lines[lineIndex], charDelay, () => {
-                        lineIndex++;
-                        setTimeout(nextLine, lineDelay);
-                    });
-                } else {
-                    if (finalCallback) finalCallback();
-                }
-            }
-            nextLine();
+                    typeLine(lines[lineIndex], charDelay, () => { lineIndex++; setTimeout(nextLine, lineDelay); });
+                } else { if (finalCallback) finalCallback(); }
+            } nextLine();
         }
 
-        // --- NEW Execution Sequence ---
-        // 1. Show initial warning for a duration
-        setTimeout(() => {
-            // 2. Hide initial warning (fade out)
-            initialWarningElement.classList.add('hidden');
+        // --- UPDATED Execution Sequence ---
+        setTimeout(() => { // 1. Show initial warning
+            initialWarningElement.classList.add('hidden'); // 2. Start hiding warning
 
-            // 3. After fade out, show output area and start typing sequence
-            setTimeout(() => {
-                 outputElement.classList.add('visible'); // Fade in output area
-                 // Start the boot sequence typing
-                 typeSequence(bootSequence, charTypingDelay, bootLineDelay, () => {
-                    // After boot sequence, wait, then type invasion message
-                    setTimeout(() => {
+            setTimeout(() => { // 3. After warning fade, show output & start typing
+                 outputElement.classList.add('visible');
+                 typeSequence(bootSequence, charTypingDelay, bootLineDelay, () => { // Start boot seq
+                    setTimeout(() => { // After boot seq
                         addLineBreak();
-                        typeLine(introText, introTypingDelay, () => {
-                             // After invasion message, wait, then type monologue
-                             setTimeout(() => {
+                        typeLine(introText, introTypingDelay, () => { // Type intro
+                             setTimeout(() => { // After intro
                                  addLineBreak();
-                                 typeSequence(monologueLines, introTypingDelay, monologueLineDelay, () => {
-                                    // Optional: Final message
+                                 typeSequence(monologueLines, introTypingDelay, monologueLineDelay, () => { // Type monologue
+                                    // --- AFTER MONOLOGUE ---
                                     addLineBreak();
-                                    typeLine("> Session Terminated.", charTypingDelay, null);
-                                 });
-                             }, suspenseDelay); // Wait before monologue
-                        });
-                    }, suspenseDelay); // Wait before invasion message
-                 });
-            }, fadeDuration); // Wait for warning fade-out before showing/starting typing
+                                    typeLine("> Session Terminated.", charTypingDelay, () => {
+                                        // --- FINAL ACTIONS ---
+                                        setTimeout(() => {
+                                            // Fade out terminal
+                                            terminalContainerElement.classList.add('hidden');
+                                            // Show final message
+                                            finalMessageElement.classList.add('visible');
 
-        }, initialWarningDuration); // Initial display time for skull/warning
+                                            // Wait, then try to close tab
+                                            setTimeout(() => {
+                                                // Attempt to close tab - may be blocked by browser
+                                                console.log("Attempting to close tab..."); // Log attempt
+                                                window.close();
+                                                // If close fails, the message remains visible
+                                            }, showFinalMessageDuration + closeTabDelay); // Wait after showing message
+
+                                        }, finalMessageDelay); // Wait after typing "Session Terminated"
+                                    }); // End of typeLine Session Terminated
+                                 }); // End of typeSequence Monologue
+                             }, suspenseDelay); // Wait before monologue
+                        }); // End of typeLine Intro
+                    }, suspenseDelay); // Wait before intro
+                 }); // End of typeSequence Boot
+            }, fadeDuration); // Wait for warning fade
+        }, initialWarningDuration); // Show warning initially
 
     </script>
 </body>
