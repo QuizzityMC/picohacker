@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Password</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+        #target-sequence { font-size: 2em; font-weight: bold; letter-spacing: 0.2em; margin-bottom: 20px; color: blue; }
+        #user-input { font-size: 1.5em; padding: 10px; margin-bottom: 20px; text-align: center; }
+        #status { font-size: 1.5em; font-weight: bold; height: 30px; }
+        .correct { color: green; }
+        .incorrect { color: red; }
+        .typing { color: orange; }
+    </style>
+</head>
+<body>
+
+    <h1>Data Retrieving</h1>
+
+    <div id="target-sequence">********</div>
+    <input type="text" id="user-input" placeholder="Type here..." autocomplete="off">
+    <div id="status">Waiting...</div>
+
+    <script>
+        const targetSequence = "********"; // The sequence the Pico needs to type
+        const targetDisplay = document.getElementById('target-sequence');
+        const inputField = document.getElementById('user-input');
+        const statusDisplay = document.getElementById('status');
+
+        // Display the target sequence
+        targetDisplay.textContent = targetSequence;
+
+        // Focus the input field on load
+        window.onload = () => {
+            inputField.focus();
+            statusDisplay.textContent = "Ready!";
+            statusDisplay.className = "typing";
+        };
+
+        // Check input as the user types
+        inputField.addEventListener('input', () => {
+            const currentInput = inputField.value.toUpperCase(); // Match case-insensitively
+
+            if (currentInput === targetSequence) {
+                statusDisplay.textContent = "Correct!";
+                statusDisplay.className = "correct";
+            } else if (targetSequence.startsWith(currentInput)) {
+                statusDisplay.textContent = "Typing...";
+                statusDisplay.className = "typing";
+            } else {
+                statusDisplay.textContent = "Incorrect Key!";
+                statusDisplay.className = "incorrect";
+            }
+        });
+
+        // Optional: Clear input if user clicks outside and back in
+        inputField.addEventListener('blur', () => {
+             // You could clear here, but let's keep it simple for the Pico
+        });
+         inputField.addEventListener('focus', () => {
+             // Could reset status here if needed
+             inputField.select(); // Select existing text on focus
+        });
+
+    </script>
+
+</body>
+</html>
